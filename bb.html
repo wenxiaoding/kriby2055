@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>~*~ Kirby's Dream Site !*! Butter Building</title>
+    <link rel="stylesheet" type="text/css" href="pixel-fix.css">
+    <style>
+      body {
+        background-image: url("./background.gif");
+        background-size: cover;
+        image-rendering: pixelated;
+        text-align: center;
+      }
+      
+      .bronto {
+        width: 64px;
+        height: auto;
+        image-rendering: pixelated;
+        position: fixed;
+        bottom: 0;
+        right: 100px;
+      }
+    </style>
+  </head>
+  <body>
+    <audio autoplay controls id="player">
+      <source src="bb.mp3" type="audio/mpeg">
+    </audio>
+    
+    <img id="bronto" class="bronto" src="bronto.gif">
+    <script>
+      const url = window.location.href;
+      if (url.match(/noAudio/) !== null){
+        const audioElement = document.getElementById('player');
+        audioElement.remove();
+      }
+    
+      var width  = window.innerWidth;
+      var height = window.innerHeight;    
+    
+      function random_num(min, max){
+        return Math.round(Math.random()*(max - min)) + min;
+      }
+    
+      // later use
+      var brontos = [];
+      
+      function registerBronto(bronto, update, init_x, init_y){
+        brontos.push({ dom: bronto, update: update, x: init_x, y: init_y });
+      }
+      
+      function cloneBronto(original){
+        var clone = original.cloneNode();
+        document.body.appendChild(clone);
+        
+        return clone;
+      }
+      
+      // mix things up a bit
+      function updateBrontoPosition(bronto, t, dt){
+        var a = random_num(10, 1000);
+        var b = random_num(10, 1000);
+        
+        return function (bronto, t, dt){
+          var old_x = bronto.x;
+          
+          bronto.x = bronto.x + Math.sin(t/a);
+          bronto.y = bronto.y + -1*(dt/b);
+          
+          // orientation
+          if ((bronto.x - old_x) > 0){
+            // left oriented
+            bronto.dom.style.transform = "scale(-1, 1)"; // uhhh this will work I think
+          } else {
+            bronto.dom.style.transform = "scale(1, 1)";
+          }
+        }
+      }
+      
+      function moveBronto(bronto){
+        bronto.dom.style.left = bronto.x + "px";
+        bronto.dom.style.top = bronto.y + "px";
+      }
+    
+      var bronto = document.getElementById('bronto');
+      
+      registerBronto(bronto, updateBrontoPosition(), random_num(0, width), random_num(0, height));
+      
+      for (var i = 0; i < 100; i++){
+        var nb = cloneBronto(bronto);
+        
+        // randomize size
+        nb.style.width = random_num(16/2, 64*2) + "px";
+        registerBronto(nb, updateBrontoPosition(), random_num(0, width), random_num(0, height));
+      }
+
+      
+      var start  = 0;
+      
+      function step(timestamp){
+        if (!start) { start = timestamp; }
+        var progress = timestamp - start;
+        var delta    = timestamp - progress;
+        
+        //x = x + Math.min(delta/1000, 1000);
+        // bronto.style.left = x + "px";
+        // sb.style.right = x + "px";
+        
+        var all_done = true;
+        
+        for (var i = 0; i < brontos.length; i++){
+          var bronto = brontos[i];
+          bronto.update(bronto, progress, delta);
+          moveBronto(bronto);
+          // all_done = (all_done && bronto.y < -64);
+          
+          if (bronto.y < -128){
+            var old_bronto = brontos.splice(i, 1)[0];
+            var parent = old_bronto.dom.parentNode;
+            parent.removeChild(old_bronto.dom);
+          }
+        }
+        
+        if (true){
+          window.requestAnimationFrame(step);
+        }
+      }
+      
+      window.requestAnimationFrame(step);
+      
+      window.onclick = function (e){
+        var x = e.pageX;
+        var y = e.pageY;
+        
+        for (var i = 0; i < 20; i++){
+          var nb = cloneBronto(bronto);
+        
+          // randomize size
+          nb.style.width = random_num(16, 64) + "px";
+          registerBronto(nb, updateBrontoPosition(), x, y);
+        }
+      }
+       
+    </script>
+  </body>
+</html>
